@@ -80,18 +80,48 @@ float sdTorus(vec3 p)
     return length(q)-t.y;
 }
 
-float sdCapsule(vec3 p)
+float sdCapsule1(vec3 p)
 {
-    vec3 pos = vec3(2,0,4);
+    vec3 pos = vec3(1,0,0);
     p = p - pos;
-    vec3 a = vec3(1.75,1,1);
-    vec3 b = vec3(1.75,1,1);
-    float r = 0.5;
+    vec3 a = vec3(0,3.9,1);
+    vec3 b = vec3(0,0.1,1);
+    float r = 0.15;
     vec3 pa = p - a, ba = b - a;
     float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
     return length( pa - ba*h ) - r;
 }
 
+float sdCapsule2(vec3 p)
+{
+    vec3 pos = vec3(-1,0,0);
+    p = p - pos;
+    vec3 a = vec3(0,3.9,1);
+    vec3 b = vec3(0,0.1,1);
+    float r = 0.15;
+    vec3 pa = p - a, ba = b - a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+    return length( pa - ba*h ) - r;
+}
+
+float cube(vec3 p) {
+    vec3 pos = vec3(0,1,0);
+    vec3 b = vec3(0.6, 0.6, 0.6);
+    return length(max(abs(p - pos)-b,0.0));
+}
+
+float sphere(vec3 p) {
+    vec3 pos = vec3(0, 1, 0);
+    float radius = 0.75;
+    return length(p - pos) - radius;
+}
+
+float solidCube(vec3 p) {
+  vec3 pos = vec3(0,0,0);
+  float d = sphere(p);
+  d = max(cube(p), -d);
+  return d;
+}
 
 
 float sceneSDF(vec3 p) {
@@ -101,8 +131,12 @@ float sceneSDF(vec3 p) {
     d = min(d, planeSDF(p));
     d = min(d, mirrorCubeSDF(p));
     d = min(d, sdTorus(p));
+    d = min(d, sdCapsule1(p));
+    d = min(d, sdCapsule2(p)); 
+    d = min(d, solidCube(p)); 
     return d;
 }
+
 
 vec3 getNormal(vec3 p) {
     return normalize(vec3(
@@ -155,10 +189,10 @@ vec3 phongIllumination(vec3 ambient, vec3 diffuse, vec3 specular,float shininess
   vec3 light2Intens = vec3(0.4, 0.4, 0.4);
   float d1 = RayMarch(p + 2 * EPSILON * getNormal(p), normalize(light1Pos - p), MIN_DIST, MAX_DIST);
   float d2 = RayMarch(p + 2 * EPSILON * getNormal(p), normalize(light2Pos - p), MIN_DIST, MAX_DIST);
-  if (d1 >= length(light1Pos - p) - EPSILON) {
+  if (d1 >= length(light1Pos - p) -  EPSILON) {
     color +=  phongContrib(diffuse, specular, shininess, p, ray_pos, light1Pos, light1Intens);   
   }
-  if (d2 >= length(light2Pos - p) - EPSILON) {
+  if (d2 >= length(light2Pos - p) -  EPSILON) {
     color +=  phongContrib(diffuse, specular, shininess, p, ray_pos, light2Pos, light1Intens);   
   } 
   return color;   
@@ -196,10 +230,6 @@ void main(void)
   vec3 point = ray_pos + ray_dir * dist;
   float shininess;
   if (mirrorCubeSDF(point) <=  2 * EPSILON){
-    K_a = vec3(0., 0., 0.);
-    K_d = vec3(0., 0., 0.);
-    K_s = vec3(0., 0., 0.);
-    shininess = 76.8;
     vec3 normal = getNormal(point);
     vec3 reflectvec = normalize(reflect(ray_dir, normal));
     float d = RayMarch(point , reflectvec, MIN_DIST + 2 * EPSILON, MAX_DIST);
@@ -212,25 +242,42 @@ void main(void)
     }
   } 
   if ( length(sdTorus(point))  <= 2 * EPSILON) {
-    K_a = vec3(0.0215, 0.1745, 0.0215);
-    K_d = vec3(0.07568, 0.61424, 0.07568);
-    K_s = vec3(0.633, 0.727811, 0.633);
-    shininess = 76.8;
+    
+    K_a = vec3(0.05375, 0.05, 0.06625);
+    K_d = vec3(0.18275, 0.17, 0.22525 );
+    K_s = vec3(0.332741, 0.328634, 0.346435 );
+    shininess = 38.4;
   } else if ( length(planeSDF(point)) <= 2 * EPSILON) {
     K_a = vec3(0.1745, 0.01175, 0.01175);
     K_d = vec3(0.61424, 0.04136, 0.04136);
     K_s = vec3(0.727811, 0.626959, 0.626959);
     shininess = 76.8;
   } else if (length(sphereSDF1(point)) <= 2 * EPSILON){
-    K_a = vec3(0.05375, 0.05, 0.06625);
-    K_d = vec3(0.18275, 0.17, 0.22525 );
-    K_s = vec3(0.332741, 0.328634, 0.346435 );
-    shininess = 38.4;
+    K_a = vec3(0.0215, 0.1745, 0.0215);
+    K_d = vec3(0.07568, 0.61424, 0.07568);
+    K_s = vec3(0.633, 0.727811, 0.633);
+    shininess = 76.8;
   } else if (length(sphereSDF2(point)) <= 2 * EPSILON){
+    K_a = vec3(0.0215, 0.1745, 0.0215);
+    K_d = vec3(0.07568, 0.61424, 0.07568);
+    K_s = vec3(0.633, 0.727811, 0.633);
+    shininess = 76.8;
+  } else if (length(sdCapsule1(point)) <= 2* EPSILON) {
     K_a = vec3(0.05375, 0.05, 0.06625);
     K_d = vec3(0.18275, 0.17, 0.22525 );
     K_s = vec3(0.332741, 0.328634, 0.346435 );
     shininess = 38.4;
+  } else if (length(sdCapsule2(point)) <= 2* EPSILON) {
+    K_a = vec3(0.05375, 0.05, 0.06625);
+    K_d = vec3(0.18275, 0.17, 0.22525 );
+    K_s = vec3(0.332741, 0.328634, 0.346435 );
+    shininess = 38.4;
+  } else if (length(solidCube(point)) <= 2 * EPSILON) {
+    K_a = vec3(0.24725, 0.1995, 0.0745);
+    K_d = vec3(0.75164, 0.60648, 0.22648);
+    K_s = vec3(0.628281, 0.555802, 0.366065);
+    shininess = 51.2;
+
   } else {
     K_a = vec3(0.05375, 0.05, 0.06625);
     K_d = vec3(0.18275, 0.17, 0.22525 );

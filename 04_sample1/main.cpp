@@ -8,13 +8,13 @@
 #include <GLFW/glfw3.h>
 #include <random>
 #include <ctime>
-static GLsizei WIDTH = 512, HEIGHT = 512  ; //размеры окна
+static GLsizei WIDTH = 1024, HEIGHT = 768; //размеры окна
 
 using namespace LiteMath;
 
-float  cam_rot[2] = {0,0};
+float  cam_rot[2] = {-M_PI_4/3, -4 * M_PI_4};
 int    mx = -3, my = 8;
-float cx = 1, cy = 6, cz = -2;
+float cx = 0, cy = 6, cz = -15;
 float3 g_camPos(cx, cy, cz);
 float3 direction;
 float3 up(0, 1, 0);
@@ -52,6 +52,10 @@ void keyFun(GLFWwindow *window, int key, int scancode, int action, int mods)
     	position -= up * deltaTime * speed;
   	}
 }
+
+
+int widthw;
+int heighth;
 unsigned char * get_tga_file(const char* t_file) 
 { 
   FILE *_file; 
@@ -68,10 +72,10 @@ unsigned char * get_tga_file(const char* t_file)
   if(header[2] != 2) { 
     std::cout << "!= 2 " <<  t_file <<  std::endl;
     return 0;} 
-  int width = header[13] * 256 + header[12]; 
-  int height = header[15] * 256 + header[14]; 
+  widthw = header[13] * 256 + header[12]; 
+  heighth = header[15] * 256 + header[14]; 
   color = header[16] / 8; 
-  size = width * height * color; 
+  size = widthw * heighth * color; 
   unsigned char *image = new unsigned char[sizeof(unsigned char) * size]; 
   fread(image,sizeof(unsigned char),size,_file); 
   for(long i = 0; i < size; i += color) 
@@ -90,14 +94,13 @@ GLuint loadCubemap(std::vector<std::string> faces)
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
-    int width, height, nrChannels;
     for (unsigned int i = 0; i < faces.size(); i++)
     {
         unsigned char *data = get_tga_file(faces[i].c_str());
         if (data)
         {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 
-                         0, GL_RGB, WIDTH, HEIGHT, 0, GL_BGR, GL_UNSIGNED_BYTE, data
+                         0, GL_RGB, widthw, heighth, 0, GL_RGB, GL_UNSIGNED_BYTE, data
             );
             delete[] data;
         }
