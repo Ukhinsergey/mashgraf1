@@ -1,0 +1,3 @@
+/home/serega/msu/mashgraf1/04_sample1/CMakeFiles/rebuild_cache.dir
+/home/serega/msu/mashgraf1/04_sample1/CMakeFiles/main.dir
+/home/serega/msu/mashgraf1/04_sample1/CMakeFiles/edit_cache.dir
